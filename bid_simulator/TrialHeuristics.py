@@ -4,13 +4,6 @@
 import pandas as pd
 from numpy.core.defchararray import lower
 
-# Data
-pjm2017 = pd.read_csv(
-    '/Users/jakeatkinson/Documents/Uni/Manchester/Data Science/Dissertation/Code/Data/PJM/pjm2017_forecasts.csv')
-
-
-# STRATEGIES INDEX
-
 
 # Calculate Delta for various heuristics
 def bid_clearance(sord, bid, price):
@@ -79,47 +72,9 @@ def delta_on_data(demand_supply_str, data, rt_market_price_str, da_market_price_
                 delta = price_rt - price_da
                 total_delta += delta
 
-    else:
-        pass
-
     pc_bids_cleared = round((bids_cleared / total_bids) * 100, 2)
 
     return pc_bids_cleared, total_delta
-
-
-def delta_adjusted_price(data, bid_str, adjustment_range):
-    """
-    Function takes bid data, attribute detailing bid prices and desired +/- price adjustment.py
-
-    Output is a data frame of S/D bids with % price adjustment, % cleared bids and delta.
-
-    !!!!!! THIS FUNCTION DOESN'T WORK ACCURATELY BECAUSE IT DOESN'T TAKE ACCOUNT OF SEPARATE S/D PREDICTIONS
-    """
-
-    sords = []
-    bid_adjustment = []
-    pc_cleared_bids = []
-    deltas = []
-
-    min, max = (adjustment_range * -1), (adjustment_range + 1)
-
-    for sord in ['supply', 'demand']:
-        for adjustment in range(min, max):
-            sords.append(sord)
-            bid_adjustment.append(adjustment)
-            pc_bids_cleared, total_delta = delta(sord, data, 'total_lmp_rt', 'total_lmp_da', bid_str,
-                                                 adjustment)
-            pc_cleared_bids.append(round(pc_bids_cleared, 2))
-            deltas.append(round(total_delta, 2))
-
-    sords_df = pd.DataFrame(sords, columns=['S/D'])
-    bid_adjustment_df = pd.DataFrame(bid_adjustment, columns=['pc_adjustment'])
-    pc_cleared_bids_df = pd.DataFrame(pc_cleared_bids, columns=['pc_cleared_bids'])
-    deltas_df = pd.DataFrame(deltas, columns=['delta'])
-
-    adjusted_means = pd.concat([sords_df, bid_adjustment_df, pc_cleared_bids_df, deltas_df], axis=1)
-
-    return adjusted_means
 
 
 def InitiateBids(name, data, forecasted_da_lmp, forecasted_rt_lmp, rt_market_price_str, da_market_price_str, dates,
