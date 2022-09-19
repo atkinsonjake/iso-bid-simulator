@@ -5,9 +5,6 @@ from sklearn.model_selection import train_test_split
 import random
 import os
 
-node_id = 51205
-data = data.loc[(data['pnode_id'] == node_id)]
-
 ## Determine historical average per node RT (N.B. dependent only on date and not time!)
 mean_total_lmp_rt = data[['pnode_id', 'time_beginning_ept', 'total_lmp_rt']].groupby(
     ['pnode_id', 'time_beginning_ept']).mean()
@@ -38,28 +35,22 @@ data = pd.merge(data, mean_total_lmp_da, how='left', on='Key')
 data['index_key'] = data.index
 
 
-# Create arbitrary forecasts
-
 def forecast(data, criterion_str, average_data, average_column, output_name_str='forecast'):
+    # Creates arbitrary forecasts
     forecasts = []
-
     mean_av = average_data[f'{average_column}'].mean()
     mean_stdev = 3 * (average_data[f'{average_column}'].std())
 
     count = 0
     mean_applied = 0
 
-    for price in data[f'{criterion_str}']:
+    for price in data[criterion_str]:
         # random_k = random.randrange(-5, 5)
         # forecast = price * (1 + random_k / 100)
         # forecasts.append(forecast)
 
         count += 1
-
-        print(price, mean_av, mean_stdev)
-
         if (mean_av + mean_stdev) < price or price < (mean_av - mean_stdev):
-            print('mean applied')
             forecast = mean_av
             forecasts.append(forecast)
             mean_applied += 1
@@ -68,7 +59,6 @@ def forecast(data, criterion_str, average_data, average_column, output_name_str=
             forecast = price * (1 + random_k / 100)
             forecasts.append(forecast)
 
-    print(count, mean_applied)
     forecasts_df = pd.DataFrame(forecasts, columns=[f'{output_name_str}'])
     data = data.reset_index(drop=True)
     data_with_forecasts = data.join(forecasts_df)
