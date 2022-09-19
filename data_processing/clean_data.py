@@ -1,43 +1,59 @@
 import pandas as pd
 
-data = pd.read_csv('pjm_data_2017.csv')
+class PreprocessPjmData:
 
-# Check these columns if modifying data!
-data = data.drop(data.columns[[0, 4, 5, 7]], axis=1, inplace=True)
-data['datetime_beginning_ept'] = data['datetime_beginning_ept'].astype(str)
-data[['date_beginning_ept', 'time_beginning_ept']] = data['datetime_beginning_ept'].str.split(" ", 1, expand=True)
-data = data.drop(['datetime_beginning_ept'], axis=1, inplace=True)
+    def __init__(self):
+        pass
 
 
-# Reformat time to 24hr
-def convert_time(twelve_hour):
-    global time
+    def _drop_redundant_attributes(self, df):
+        # Check these columns if modifying data!
+        df = df.drop(df.columns[[0, 4, 5, 7]], axis=1, inplace=True)
+        return df
 
-    if len(twelve_hour) < 11:
-        time = str(0) + str(twelve_hour)
-    else:
-        time = twelve_hour
 
-    if time[-3:] == ' AM':
-        if time[:2] == '12':
-            newtime = str('00' + time[2:-3])
+    def _transform_columns(self, df, column_name: str):
+        # For PJM column = "datetime_beginning_ept"
+        df[column_name] = df[column_name].astype(str)
+        return df
+
+    def _transform_date_columns(self, df):
+        df = self._transform_columns(df, "datetime_beginning_ept")
+        df[['date_beginning_ept', 'time_beginning_ept']] = df['datetime_beginning_ept'].str.split(" ", 1, expand=True)
+        df = df.drop(['datetime_beginning_ept'], axis=1, inplace=True)
+        return df
+
+
+    def _convert_time(self, twelve_hr_time):
+        # Reformats 12hr time to 24hr
+
+        if len(twelve_hr_time) < 11:
+            time = str(0) + str(twelve_hr_time)
         else:
-            newtime = time[:-3]
-    else:
-        if time[:2] == '12':
-            newtime = time[:-2]
+            time = twelve_hr_time
+
+        if time[-3:] == ' AM':
+            if time[:2] == '12':
+                newtime = str('00' + time[2:-3])
+            else:
+                newtime = time[:-3]
         else:
-            newtime = str(int(time[:2]) + 12) + time[2:-3]
+            if time[:2] == '12':
+                newtime = time[:-2]
+            else:
+                newtime = str(int(time[:2]) + 12) + time[2:-3]
 
-    return newtime
-
-
-twenty_four_times = []
-for time_twelve in data['time_beginning_ept']:
-    time_twenty_four = convert_time(time_twelve)
-    twenty_four_times.append(time_twenty_four)
+        return newtime
 
 
-data.drop(['time_beginning_ept'], axis=1, inplace=True)
-time_beginning_ept = pd.DataFrame(twenty_four_times, columns=['time_beginning_ept'])
-data = pd.concat([data, time_beginning_ept], axis=1)
+    def _transform_time(self, df, twelve_hr_time_column):
+        twenty_four_times = []
+
+        for time_twelve in df[twelve_hr_time_column]:
+            time_twenty_four = self._convert_time(time_twelve)
+            twenty_four_times.append(time_twenty_four)
+
+        time_beginning_ept = pd.DataFrame(twenty_four_times, columns=['time_beginning_ept'])
+        df = pd.concat([df, time_beginning_ept], axis=1)
+
+        return df
